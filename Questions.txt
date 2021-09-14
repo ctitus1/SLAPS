@@ -3,11 +3,17 @@ How many watts is a lot?
 
 BMP280 documentation says it has a max altitude of ~9 km or 29k ft, but launch_code assumes that the pressure sensor
 can detect an altitude as high as 65k ft (this is when the doors close). This seems to be outside the capabilities
-of the sensor. Has this been considered?
+of the sensor. Has this been considered/will it be good enough? (link to possible replacement: https://www.adafruit.com/product/4716?gclid=Cj0KCQjwkIGKBhCxARIsAINMioLxCG5gW1MJGmAY4mNTwlYjjfmYmf2MMZr3mJRjbql-tVTRVPAyLlcaAj18EALw_wcB)
 - [UNANSWERED]
 
 How does sueprwrite work, what is the paramter "int s"? Could you explain flow of the function?
 - [UNANSWERED]
 
 Where is the SD card lol?
+- With Ray, check with Grace on 9/15
+
+Why did the data stop at 3.3 km?
+- [UNANSWERED]
+
+What exactly went wrong last time?
 - [UNANSWERED]
