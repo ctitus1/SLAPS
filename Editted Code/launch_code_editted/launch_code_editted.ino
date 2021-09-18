@@ -1,8 +1,10 @@
 // Definitions
-#define BMP 0
+#define BMP 1
 
 // Libraries
-//#include <Adafruit_BMP280.h>
+#if BMP
+#include <Adafruit_BMP280.h>
+#endif
 #include <Adafruit_INA219.h>
 //#include <Adafruit_LSM9DS0.h> // IMU library, currently no used in code
 # if BMP
@@ -28,16 +30,16 @@ const String default_filename = "DEFAULT.txt";
 String filename = default_filename; // global variable used by memory functions
 enum {BAD, GOOD} state =  GOOD;
 
-// Runs once
+// Runs once (uploading code runs code, and opening serial monitor runs code. Having serial monitor open while uploading code
+// will make the code execute once (quickly) for uploading, and then again for the serial monitor. This will create two files
+// when uploading which is normal. When resetting, only one new file will be created regardless of whether serial monitor
+// is open.
 void setup() {
   Serial.begin(9600); //Sets the baudrate to 9600
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
 
 #if BMP
   Serial.println("bmp begin");
-  if (!bmp.begin()) // *** PROGRAM FREEZES HERE FOR SOME REASON
+  if (!bmp.begin()) // *** PROGRAM FREEZES HERE FOR SOME REASON, BMP SENSOR MIGHT BE BROKEN
   {
     /* There was a problem detecting the BMP085 ... check your connections */
     Serial.println(F("BmP check wire"));
