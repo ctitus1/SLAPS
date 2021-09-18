@@ -1,4 +1,4 @@
-
+#define OUTPUT Serial
 
 //include all necessary libraries here
 #include <Adafruit_BMP280.h>            
@@ -61,6 +61,8 @@ void setup() {
 }
 
 void loop() {
+  Serial.print("State: ");Serial.print(state);
+  Serial.println();
   currentMillis=millis();
   if (state==1){
     alt=bmp.readAltitude(local_p);
@@ -71,7 +73,7 @@ void loop() {
 
     if (alt>=1524){ //can be any height
       state=2; //changes state
-      DataFile.println("Change to 2. Timestamp: "+ currentMillis);
+      OUTPUT.println("Change to 2. Timestamp: "+ currentMillis);
       servoopen(); //defines the opening process to get the servo to go to a certain angle
     }
   }
@@ -84,7 +86,7 @@ void loop() {
 
     if (alt>=19812){ //can be any height
       state=3; //changes state
-      DataFile.println("Change to 3. Timestamp: "+ currentMillis); 
+      OUTPUT.println("Change to 3. Timestamp: "+ currentMillis); 
       servoclose(); //defines the closing process to get the servo to go to a certain angle
     }
   }

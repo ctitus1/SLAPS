@@ -7,6 +7,7 @@ TODO:
 - Test that it works with solar panel
 
 Stretch goals:
+- Measure IMU data
 - Check power usage of servo
 - Add battery power/voltage to data being recorded
 - If easy to do, add a check to see if memory is at capacity

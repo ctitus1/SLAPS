@@ -15,9 +15,9 @@ void superwrite(int s, float alti){
     power_mW=0;
     loadvoltage=0;
   }
-  DataFile.print(String(millis())+",");
-  DataFile.print(String(loadvoltage)+","+String(current_mA)+","+String(power_mW)+","+String(pressure_event.pressure)+","+String(alti)+","+String(temp_event.temperature));
-  DataFile.println();
+  OUTPUT.print(String(millis())+",");
+  OUTPUT.print(String(loadvoltage)+","+String(current_mA)+","+String(power_mW)+","+String(pressure_event.pressure)+","+String(alti)+","+String(temp_event.temperature));
+  OUTPUT.println();
 }
 
 
