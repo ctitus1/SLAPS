@@ -1,0 +1,12 @@
+TODO:
+- Rewrite "superwrite()" to be easier to maintain and add comments
+- Add time, status, etc. to data being recorded
+- Add error checking
+- Prevent overwrites with the data
+- Test ability to recover from loss of power
+- Test that it works with solar panel
+
+Stretch goals:
+- Check power usage of servo
+- Add battery power/voltage to data being recorded
+- If easy to do, add a check to see if memory is at capacity
