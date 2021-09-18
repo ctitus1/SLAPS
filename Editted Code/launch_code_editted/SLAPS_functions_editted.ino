@@ -51,13 +51,14 @@ void mem_init() {
   int num = 0; // num refers to ### in description, ### is just to show that it's padded by 3 zeroes
   do {
     file_num(num++);
+    Serial.println(filename);
   } while (SD.exists(filename));
 
   // opens file to write
   file = SD.open(filename, FILE_WRITE);
   if (file) { // file opened successfully
-    OUTPUT.print(col_headers);
-    OUTPUT.println();
+    file.print(col_headers);
+    file.println();
   } else { // file opened unsuccessfully
     Serial.print("error opening "); Serial.print(filename);
     Serial.println();
@@ -78,26 +79,25 @@ void mem_write() {
   unsigned long current_time;
   float pressure, temp, altitude, solar_voltage;
   int  servo_angle;
-
   file = SD.open(filename, FILE_WRITE);
   if (file) { // file opened successfully
 
     // loads data into appropriate variables
     current_time = millis();
-    pressure = bmp.readPressure();
+    pressure = bmp.readPressure(); // *** BMP NOT WORKING FOR CHRIS
     temp = bmp.readTemperature();
     altitude = bmp.readAltitude();
     solar_voltage = ina.getBusVoltage_V();
     servo_angle = servo.read();
-
+Serial.println("writing");
     // writes data to memory
-    OUTPUT.print(state); file.print(",");
-    OUTPUT.print(current_time); file.print(",");
-    OUTPUT.print(pressure); file.print(",");
-    OUTPUT.print(temp); file.print(",");
-    OUTPUT.print(altitude); file.print(",");
-    OUTPUT.print(solar_voltage); file.print(",");
-    OUTPUT.print(servo_angle); file.println();
+    file.print(state); file.print(",");
+    file.print(current_time); file.print(",");
+    file.print(pressure); file.print(",");
+    file.print(temp); file.print(",");
+    file.print(altitude); file.print(",");
+    file.print(solar_voltage); file.print(",");
+    file.print(servo_angle); file.println();
   } else { // file opened unsuccessfully
     Serial.print("error opening "); Serial.print(filename);
     Serial.println();
@@ -145,7 +145,7 @@ void open_doors(Servo servo) { // *** consider renaming servos or flipping them 
   const int open_ang = 175; // target angle of left servo to be open
   const unsigned long open_delay = 10000; // time allotted for left servo to reach target angle
 
-  servo_move_to(servo,open_ang,open_delay);
+  servo_move_to(servo, open_ang, open_delay);
 }
 
 /*!
@@ -158,5 +158,5 @@ void close_doors(Servo servo) { // *** consider renaming servos or flipping them
   const int close_ang = 30; // target angle of left servo to be open
   const unsigned long close_delay = 10000; // time allotted for left servo to reach target angle
 
-  servo_move_to(servo,close_ang,close_delay);
+  servo_move_to(servo, close_ang, close_delay);
 }

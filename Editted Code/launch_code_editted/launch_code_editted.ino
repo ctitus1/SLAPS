@@ -9,7 +9,6 @@
 #include <SD.h>
 
 // Definitions
-#define OUTPUT Serial // Serial or file
 
 // Global variables
 Adafruit_INA219 ina;
@@ -27,39 +26,29 @@ enum {BAD, GOOD} state =  GOOD;
 // Runs once
 void setup() {
   Serial.begin(9600); //Sets the baudrate to 9600
-  if (!bmp.begin())
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+
+  Serial.println("bmp begin");
+  if (!bmp.begin()) // *** PROGRAM FREEZES HERE FOR SOME REASON
   {
     /* There was a problem detecting the BMP085 ... check your connections */
     Serial.println(F("BmP check wire"));
     while (1) delay(10);
   }
-
-  if (! ina.begin()) {             //detects if there is a problem with the ina219
-    Serial.println("Can't find INA219 ");
-    while (1) {
-      delay(10);
-    }
-  }
-
-  file = SD.open("test.txt", FILE_WRITE);
-  delay(10);
+  Serial.println("bmp done");
 
 
   if (!SD.begin(4)) {
     Serial.println("SDinit failed!");
     while (1);
   }
-
+  Serial.println("init");
   mem_init();
+  Serial.println("write");
   mem_write();
-  delay(500);
-  mem_write();
-  delay(500);
-  mem_write();
-  delay(500);
-  mem_write();
-  delay(500);
-  mem_write();
+  Serial.println("done");
 }
 
 // Loops
