@@ -84,12 +84,14 @@ void mem_write() {
 
     // loads data into appropriate variables
     current_time = millis();
+#if BMP
     pressure = bmp.readPressure(); // *** BMP NOT WORKING FOR CHRIS
     temp = bmp.readTemperature();
     altitude = bmp.readAltitude();
+#endif
     solar_voltage = ina.getBusVoltage_V();
     servo_angle = servo.read();
-Serial.println("writing");
+    Serial.println("writing");
     // writes data to memory
     file.print(state); file.print(",");
     file.print(current_time); file.print(",");

@@ -1,18 +1,23 @@
+// Definitions
+#define BMP 0
+
 // Libraries
-#include <Adafruit_BMP280.h>
+//#include <Adafruit_BMP280.h>
 #include <Adafruit_INA219.h>
 //#include <Adafruit_LSM9DS0.h> // IMU library, currently no used in code
+# if BMP
 #include <Adafruit_Sensor.h>
+#endif
 #include <Wire.h>
 #include <Servo.h>
 #include <SPI.h>
 #include <SD.h>
 
-// Definitions
-
 // Global variables
 Adafruit_INA219 ina;
+#if BMP
 Adafruit_BMP280 bmp;
+#endif
 //Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(); // IMU, currently not used
 File file;
 Servo servo;
@@ -30,6 +35,7 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
+#if BMP
   Serial.println("bmp begin");
   if (!bmp.begin()) // *** PROGRAM FREEZES HERE FOR SOME REASON
   {
@@ -38,7 +44,7 @@ void setup() {
     while (1) delay(10);
   }
   Serial.println("bmp done");
-
+#endif
 
   if (!SD.begin(4)) {
     Serial.println("SDinit failed!");
@@ -47,6 +53,12 @@ void setup() {
   Serial.println("init");
   mem_init();
   Serial.println("write");
+  mem_write();
+  mem_write();
+  mem_write();
+  delay(100);
+  mem_write();
+  delay(100);
   mem_write();
   Serial.println("done");
 }
