@@ -35,24 +35,14 @@ void setup()
 {
   Serial.begin(9600);
   Serial.println("BMP280/SD Card Demo");
-  bmp.begin(BMP_address);
-  if (SD.begin(SD_pin))
-  {
-    Serial.println("SD card is present & ready");
-  }
-  else
-  {
-    Serial.println("SD card missing or failure");
-    while (1); //halt program
-  }
 
-  mem_init();
+//  mem_init();
 
   for (int i = 0; i < 2; i++) {
     dataStr[0] = 0;
-    pressure = bmp.readPressure() / 100; //and conv Pa to hPa
-    temperature = bmp.readTemperature();
-    altimeter = bmp.readAltitude (QNH); //QNH is local sea lev pressure
+    pressure = 1337; //and conv Pa to hPa
+    temperature = 33;
+    altimeter = 1234; //QNH is local sea lev pressure
     //----------------------- using c-type ---------------------------
     //convert floats to string and assemble c-type char string for writing:
     ltoa( millis(), buffer, 10); //conver long to charStr
@@ -73,12 +63,7 @@ void setup()
     strcat( dataStr, 0); //terminate correctly
 
     //----- display on local Serial monitor: ------------
-    Serial.print(pressure); Serial.print("hPa  ");
-    Serial.print(temperature);
-    Serial.write(0xC2);  //send degree symbol
-    Serial.write(0xB0);  //send degree symbol
-    Serial.print("C   ");
-    Serial.print(altimeter); Serial.println("m");
+    Serial.println(dataStr);
     //---------------------------------------------
     // open the file. note that only one file can be open at a time,
     file = SD.open("csv.txt", FILE_WRITE);
