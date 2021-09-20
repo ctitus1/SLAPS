@@ -45,7 +45,9 @@ void file_num(int num) {
 void mem_init() {
 
   // column headers for CSV
-  String col_headers = "state,current_time (ms),pressure (Pa),temp (C),altitude (m),solar_voltage (V),servo_angle (deg)";
+  const int num_headers = 6;
+  String col_headers[num_headers] = {"state,time (ms)","pressure (Pa)","temp (C)",
+                                     "altitude (m)","solar_voltage (V)","servo_angle (deg)"};
 
   // increments ### until its's a unique file
   int num = 0; // num refers to ### in description, ### is just to show that it's padded by 3 zeroes
@@ -57,8 +59,11 @@ void mem_init() {
   // opens file to write
   file = SD.open(filename, FILE_WRITE);
   if (file) { // file opened successfully
-    file.print(col_headers);
+    // write col headers
+    for(int i = 0; i < num_headers; i++) {
+    file.print(col_headers[i]);
     file.println();
+    }
   } else { // file opened unsuccessfully
     Serial.print("error opening "); Serial.print(filename);
     Serial.println();

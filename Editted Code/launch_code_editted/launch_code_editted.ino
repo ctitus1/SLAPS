@@ -23,12 +23,18 @@ Adafruit_BMP280 bmp;
 //Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(); // IMU, currently not used
 File file;
 Servo servo;
+const int SD_pin = 4;
 const int servo_pin = 6;
+const int BMP_address = 0x77;
+
 const String base_filename = "DATA";
 const String ext = ".txt";
 const String default_filename = "DEFAULT.txt";
+
 String filename = default_filename; // global variable used by memory functions
 enum {BAD, GOOD} state =  GOOD;
+
+// ********** CANNOT WRITE MORE THAN 34 CHARACTERS TO SD CARD IN A SINGLE WRITE ********* //
 
 // Runs once (uploading code runs code, and opening serial monitor runs code. Having serial monitor open while uploading code
 // will make the code execute once (quickly) for uploading, and then again for the serial monitor. This will create two files
@@ -39,7 +45,7 @@ void setup() {
 
 #if BMP
   Serial.println("bmp begin");
-  if (!bmp.begin(0x77)) // *** PROGRAM FREEZES HERE FOR SOME REASON, BMP SENSOR MIGHT BE BROKEN
+  if (!bmp.begin(BMP_address)) // *** PROGRAM FREEZES HERE FOR SOME REASON, BMP SENSOR MIGHT BE BROKEN
   {
     /* There was a problem detecting the BMP085 ... check your connections */
     Serial.println(F("BmP check wire"));
@@ -48,7 +54,7 @@ void setup() {
   Serial.println("bmp done");
 #endif
 
-  if (!SD.begin(4)) {
+  if (!SD.begin(SD_pin)) {
     Serial.println("SDinit failed!");
     while (1);
   }
