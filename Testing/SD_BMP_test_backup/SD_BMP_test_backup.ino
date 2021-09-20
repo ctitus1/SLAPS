@@ -90,7 +90,6 @@ void loop(void)
   {
     Serial.println("Writing to csv.txt");
     file.println(dataStr);
-    file.println(dataStr);
     file.close();
   }
   else

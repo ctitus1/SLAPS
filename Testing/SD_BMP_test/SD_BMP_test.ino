@@ -46,58 +46,62 @@ void setup()
     while (1); //halt program
   }
 
-mem_init2();
+  mem_init2();
+
+  for (int i = 0; i < 2; i++) {
+    dataStr[0] = 0;
+    pressure = bmp.readPressure() / 100; //and conv Pa to hPa
+    temperature = bmp.readTemperature();
+    altimeter = bmp.readAltitude (QNH); //QNH is local sea lev pressure
+    //----------------------- using c-type ---------------------------
+    //convert floats to string and assemble c-type char string for writing:
+    ltoa( millis(), buffer, 10); //conver long to charStr
+    strcat(dataStr, buffer);//add it onto the end
+    strcat( dataStr, ", "); //append the delimeter
+
+    //dtostrf(floatVal, minimum width, precision, character array);
+    dtostrf(pressure, 5, 1, buffer);  //5 is mininum width, 1 is precision; float value is copied onto buff
+    strcat( dataStr, buffer); //append the coverted float
+    strcat( dataStr, ", "); //append the delimeter
+
+    dtostrf(temperature, 5, 1, buffer);  //5 is mininum width, 1 is precision; float value is copied onto buff
+    strcat( dataStr, buffer); //append the coverted float
+    strcat( dataStr, ", "); //append the delimeter
+
+    dtostrf(altimeter, 5, 1, buffer);  //5 is mininum width, 1 is precision; float value is copied onto buff
+    strcat( dataStr, buffer); //append the coverted float
+    strcat( dataStr, 0); //terminate correctly
+
+    //----- display on local Serial monitor: ------------
+    Serial.print(pressure); Serial.print("hPa  ");
+    Serial.print(temperature);
+    Serial.write(0xC2);  //send degree symbol
+    Serial.write(0xB0);  //send degree symbol
+    Serial.print("C   ");
+    Serial.print(altimeter); Serial.println("m");
+    //---------------------------------------------
+    // open the file. note that only one file can be open at a time,
+    file = SD.open("csv.txt", FILE_WRITE);
+    if (file)
+    {
+      Serial.println("Writing to csv.txt");
+      file.println(dataStr);
+      file.println(dataStr);
+      file.close();
+    }
+    else
+    {
+      Serial.println("error opening csv.txt");
+    }
+    delay(1000);
+  }
 
 }// end setup()
 
 ////////////////////////////////////////////////////////////
 void loop(void)
 {
-  dataStr[0] = 0;
-  pressure = bmp.readPressure() / 100; //and conv Pa to hPa
-  temperature = bmp.readTemperature();
-  altimeter = bmp.readAltitude (QNH); //QNH is local sea lev pressure
-  //----------------------- using c-type ---------------------------
-  //convert floats to string and assemble c-type char string for writing:
-  ltoa( millis(), buffer, 10); //conver long to charStr
-  strcat(dataStr, buffer);//add it onto the end
-  strcat( dataStr, ", "); //append the delimeter
 
-  //dtostrf(floatVal, minimum width, precision, character array);
-  dtostrf(pressure, 5, 1, buffer);  //5 is mininum width, 1 is precision; float value is copied onto buff
-  strcat( dataStr, buffer); //append the coverted float
-  strcat( dataStr, ", "); //append the delimeter
-
-  dtostrf(temperature, 5, 1, buffer);  //5 is mininum width, 1 is precision; float value is copied onto buff
-  strcat( dataStr, buffer); //append the coverted float
-  strcat( dataStr, ", "); //append the delimeter
-
-  dtostrf(altimeter, 5, 1, buffer);  //5 is mininum width, 1 is precision; float value is copied onto buff
-  strcat( dataStr, buffer); //append the coverted float
-  strcat( dataStr, 0); //terminate correctly
-
-  //----- display on local Serial monitor: ------------
-  Serial.print(pressure); Serial.print("hPa  ");
-  Serial.print(temperature);
-  Serial.write(0xC2);  //send degree symbol
-  Serial.write(0xB0);  //send degree symbol
-  Serial.print("C   ");
-  Serial.print(altimeter); Serial.println("m");
-  //---------------------------------------------
-  // open the file. note that only one file can be open at a time,
-  file = SD.open("csv.txt", FILE_WRITE);
-  if (file)
-  {
-    Serial.println("Writing to csv.txt");
-    file.println(dataStr);
-    file.println(dataStr);
-    file.close();
-  }
-  else
-  {
-    Serial.println("error opening csv.txt");
-  }
-  delay(1000);
 } //end main
 ///////////////////////////////////////////////
 
@@ -131,21 +135,40 @@ void file_num(int num) {
   filename = String(filename_buf);
 }
 
+// *************** //
+// *************** //
 void mem_init2() {
   //write csv headers to file:
   String headers = "Time,Pressure,Temperature,Altitude"; // string length cannot be more than 34 characters
+  Serial.println(sizeof(headers));
   filename = "DATA000.txt";
-  
+
+  const int num_headers = 7;
+  char col_headers[num_headers][34] = {"state", "time (ms)", "pressure (Pa)", "temp (C)",
+                                       "altitude (m)", "solar_voltage (V)", "servo_angle (deg)"
+                                      };
+  char test[6] = "12345";
+  Serial.println(sizeof(char*));
+  //  const int num_headers = 4;
+  //  String col_headers[num_headers] = {"Time","Pressure","Temperature","Altitude"};
+
   file = SD.open(filename, FILE_WRITE);
   if (file) // it opened OK
   {
-    Serial.print("Writing headers to ");Serial.println(filename);
-    file.println(headers);
+    Serial.print("Writing headers to "); Serial.println(filename);
+    //    file.println("Time,Pressure,Temperature,Altitude");
+    file.println(test);
+    //    file.println(col_headers[0]);
+    // write col headers
+    //    for(int i = 0; i < num_headers; i++) {
+    //    file.print(col_headers[i]);
+    //    file.println();
+    //    }
     file.close();
     Serial.println("Headers written");
   }
   else
-    Serial.print("Error opening ");Serial.println(filename);
+    Serial.print("Error opening "); Serial.println(filename);
 }
 
 //void mem_init() {
