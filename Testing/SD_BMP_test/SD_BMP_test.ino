@@ -51,6 +51,7 @@ char dataStr[100] = "";
 char buffer[7];
 
 File myFile;
+File myFile2;
 
 void setup() {
   // Open serial communications and wait for port to open:
@@ -62,7 +63,18 @@ void setup() {
 
 
   Serial.print("Initializing SD card...");
+  mem_init();
 
+  Serial.println(myFile);
+  myFile.println("test");
+  myFile.close();
+}
+
+void loop() {
+  // nothing happens after setup
+}
+
+void mem_init() {
   if (!SD.begin(4)) {
     Serial.println("initialization failed!");
     while (1);
@@ -71,21 +83,36 @@ void setup() {
 
   // open the file. note that only one file can be open at a time,
   // so you have to close this one before opening another.
+
+  String filename = "test.txt";
+
+  String headers[7] = {"state", "time (ms)", "pressure (Pa)", "temp (C)", "altitude (m)", "solar_voltage (V)", "servo_angle"};
+  int num_headers = sizeof(headers) / sizeof(String);
   myFile = SD.open("test.txt", FILE_WRITE);
+
+  Serial.println(num_headers);
+  Serial.println(headers[6]);
 
   // if the file opened okay, write to it:
   if (myFile) {
-    Serial.print("Writing to test.txt...");
-    myFile.println("state,time (ms),pressure (Pa),temp (C),altitude (m),solar_voltage (V),servo_angle (deg)");
+    Serial.print("Writing headers to "); Serial.print(filename); Serial.println("...");
+    for (int i = 0; i < num_headers; i++) {
+      Serial.print(headers[i]);Serial.print(i);
+      myFile.print(headers[i]);
+      if (i < num_headers - 1) {
+        Serial.print(",");
+        myFile.print(",");
+      }
+      myFile.flush();
+      Serial.flush();
+    }
+    Serial.println();
+    myFile.println();
     // close the file:
-    myFile.close();
-    Serial.println("done.");
+    myFile.flush();
+    Serial.println("writing done.");
   } else {
     // if the file didn't open, print an error:
     Serial.println("error opening test.txt");
   }
-}
-
-void loop() {
-  // nothing happens after setup
 }
