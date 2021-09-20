@@ -8,9 +8,9 @@ File myFile;
 // Adafruit SD shields and modules: pin 10
 // Sparkfun SD shield: pin 8
 //mega pin = 53;
-const int chipSelect = 4;
+const int SD_pin = 4;
 float QNH = 1022.67; //Change the "1022.67" to your current sea level barrometric pressure (https://www.wunderground.com)
-const int BMP_address = 0x76;
+const int BMP_address = 0x77;
 
 float pressure;   
 float temperature;  
@@ -26,7 +26,7 @@ void setup()
   Serial.begin(9600);
   Serial.println("BMP280/SD Card Demo");
   bmp.begin(BMP_address); 
-  if (SD.begin(chipSelect))
+  if (SD.begin(SD_pin))
   {
     Serial.println("SD card is present & ready");
   } 
