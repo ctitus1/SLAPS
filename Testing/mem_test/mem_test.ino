@@ -1,5 +1,5 @@
 // Definitions
-#define BMP 1 // if 0, code will not execute BMP stuff
+#define BMP 0 // if 0, code will not execute BMP stuff
 
 // Libraries
 #if BMP
@@ -39,7 +39,7 @@ void setup() {
 
 #if BMP
   Serial.println("bmp begin");
-  if (!bmp.begin(0x77)) // *** PROGRAM FREEZES HERE FOR SOME REASON, BMP SENSOR MIGHT BE BROKEN
+  if (!bmp.begin()) // *** PROGRAM FREEZES HERE FOR SOME REASON, BMP SENSOR MIGHT BE BROKEN
   {
     /* There was a problem detecting the BMP085 ... check your connections */
     Serial.println(F("BmP check wire"));
