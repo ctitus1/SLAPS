@@ -1,3 +1,22 @@
+/*
+  SD card read/write
+
+  This example shows how to read and write data to and from an SD card file
+  The circuit:
+   SD card attached to SPI bus as follows:
+ ** MOSI - pin 11
+ ** MISO - pin 12
+ ** CLK - pin 13
+ ** CS - pin 4 (for MKRZero SD: SDCARD_SS_PIN)
+
+  created   Nov 2010
+  by David A. Mellis
+  modified 9 Apr 2012
+  by Tom Igoe
+
+  This example code is in the public domain.
+
+*/
 #include <Adafruit_BMP280.h>
 #include <Adafruit_INA219.h>
 //#include <Adafruit_LSM9DS0.h> // IMU library, currently no used in code
@@ -28,219 +47,45 @@ float altimeter;
 char charRead;
 char runMode;
 byte i = 0;
-char dataStr[100] = ""; // might need to make longer
-char buffer[20];
-////////////////////////////////////////////////////
-void setup()
-{
+char dataStr[100] = "";
+char buffer[7];
+
+File myFile;
+
+void setup() {
+  // Open serial communications and wait for port to open:
   Serial.begin(9600);
-  Serial.println("BMP280/SD Card Demo");
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
   bmp.begin(BMP_address);
-  if (SD.begin(SD_pin))
-  {
-    Serial.println("SD card is present & ready");
+
+
+  Serial.print("Initializing SD card...");
+
+  if (!SD.begin(4)) {
+    Serial.println("initialization failed!");
+    while (1);
   }
-  else
-  {
-    Serial.println("SD card missing or failure");
-    while (1); //halt program
+  Serial.println("initialization done.");
+
+  // open the file. note that only one file can be open at a time,
+  // so you have to close this one before opening another.
+  myFile = SD.open("test.txt", FILE_WRITE);
+
+  // if the file opened okay, write to it:
+  if (myFile) {
+    Serial.print("Writing to test.txt...");
+    myFile.println("state,time (ms),pressure (Pa),temp (C),altitude (m),solar_voltage (V),servo_angle (deg)");
+    // close the file:
+    myFile.close();
+    Serial.println("done.");
+  } else {
+    // if the file didn't open, print an error:
+    Serial.println("error opening test.txt");
   }
-
-  mem_init();
-
-  for (int i = 0; i < 2; i++) {
-    dataStr[0] = 0;
-    pressure = bmp.readPressure() / 100; //and conv Pa to hPa
-    temperature = bmp.readTemperature();
-    altimeter = bmp.readAltitude (QNH); //QNH is local sea lev pressure
-    //----------------------- using c-type ---------------------------
-    //convert floats to string and assemble c-type char string for writing:
-    ltoa( millis(), buffer, 10); //conver long to charStr
-    strcat(dataStr, buffer);//add it onto the end
-    strcat( dataStr, ", "); //append the delimeter
-
-    //dtostrf(floatVal, minimum width, precision, character array);
-    dtostrf(pressure, 5, 1, buffer);  //5 is mininum width, 1 is precision; float value is copied onto buff
-    strcat( dataStr, buffer); //append the coverted float
-    strcat( dataStr, ", "); //append the delimeter
-
-    dtostrf(temperature, 5, 1, buffer);  //5 is mininum width, 1 is precision; float value is copied onto buff
-    strcat( dataStr, buffer); //append the coverted float
-    strcat( dataStr, ", "); //append the delimeter
-
-    dtostrf(altimeter, 5, 1, buffer);  //5 is mininum width, 1 is precision; float value is copied onto buff
-    strcat( dataStr, buffer); //append the coverted float
-    strcat( dataStr, 0); //terminate correctly
-
-    //----- display on local Serial monitor: ------------
-    Serial.print(pressure); Serial.print("hPa  ");
-    Serial.print(temperature);
-    Serial.write(0xC2);  //send degree symbol
-    Serial.write(0xB0);  //send degree symbol
-    Serial.print("C   ");
-    Serial.print(altimeter); Serial.println("m");
-    //---------------------------------------------
-    // open the file. note that only one file can be open at a time,
-    file = SD.open("csv.txt", FILE_WRITE);
-    if (file)
-    {
-      Serial.println("Writing to csv.txt");
-      file.println(dataStr);
-      file.close();
-    }
-    else
-    {
-      Serial.println("error opening csv.txt");
-    }
-    delay(1000);
-  }
-}// end setup()
-
-////////////////////////////////////////////////////////////
-void loop(void)
-{
-
-} //end main
-///////////////////////////////////////////////
-
-void file_num(int num) {
-
-  // calculates length of global strings
-  int base_filename_length = base_filename.length();
-  int ext_length = ext.length();
-  int filename_length = base_filename_length + 3 + ext_length; // will cause a seg fault if n has more digits than 3
-
-  // allocates space for character buffers (the +1s are for the null character at the end of strings)
-  char base_filename_buf[base_filename_length + 1];
-  char ext_buf[ext_length + 1];
-  char filename_buf[filename_length + 1];
-
-  // check to see if num is too big
-  if (num > 999) {
-    filename = default_filename;
-    Serial.print("ERROR: num > 999, edit filename_length to prevent seg fault from filename_buf being too small");
-    return;
-  }
-
-  // stores strings base_filename and ext in their respective char[] buffers
-  base_filename.toCharArray(base_filename_buf, base_filename_length + 1);
-  ext.toCharArray(ext_buf, ext_length + 1);
-
-  // stores formatted char[] in filename_buf
-  sprintf(filename_buf, "%s%03i%s", base_filename_buf, num, ext_buf);
-
-  // converts char[] stored in filename_buf to a string and stores it in filename
-  filename = String(filename_buf);
 }
 
-//void mem_init2() {
-//  //write csv headers to file:
-//  String headers = "Time,Pressure,Temperature,Altitude"; // string length cannot be more than 34 characters
-//  filename = "DATA000.txt";
-//
-//  file = SD.open(filename, FILE_WRITE);
-//  if (file) // it opened OK
-//  {
-//    Serial.print("Writing headers to ");Serial.println(filename);
-//    file.println(headers);
-//    file.close();
-//    Serial.println("Headers written");
-//  }
-//  else
-//    Serial.print("Error opening ");Serial.println(filename);
-//}
-
-void mem_init() {
-
-  // column headers for CSV
-  const int num_headers = 7;
-  String col_headers[num_headers] = {"state", "time (ms)", "pressure (Pa)", "temp (C)",
-                                     "altitude (m)", "solar_voltage (V)", "servo_angle (deg)"
-                                    };
-
-  // increments ### until its's a unique file
-  int num = 0; // num refers to ### in description, ### is just to show that it's padded by 3 zeroes
-  do {
-    file_num(num++);
-    Serial.println(filename);
-  } while (SD.exists(filename));
-
-
-  for (int i = 0; i < num_headers; i++) {
-    strcat(dataStr, col_headers[i].c_str());
-    if (i != num_headers - 1) {
-      strcat(dataStr, ", ");
-    }
-  }
-
-  // opens file to write
-  file = SD.open(filename, FILE_WRITE);
-  if (file) { // file opened successfully
-    // write col headers
-    file.println(dataStr);
-    file.close();
-  } else { // file opened unsuccessfully
-    Serial.print("error opening "); Serial.print(filename);
-    Serial.println();
-  }
-
-  // closes and saves file
-  file.close();
-}
-
-void mem_write() {
-
-  // declares data variables
-  unsigned long current_time;
-  float pressure, temp, altitude, solar_voltage;
-  int  servo_angle;
-  file = SD.open(filename, FILE_WRITE);
-  if (file) { // file opened successfully
-
-    // loads data into appropriate variables
-    current_time = millis();
-    pressure = bmp.readPressure();
-    temp = bmp.readTemperature();
-    altitude = bmp.readAltitude();
-    solar_voltage = ina.getBusVoltage_V();
-    servo_angle = servo.read();
-    Serial.println("writing");
-
-    // preps dataStr
-    itoa(state, buffer, 1);
-    strcat(dataStr, buffer);
-    strcat(dataStr, ", ");
-
-    ltoa(current_time, buffer, 10);
-    strcat( dataStr, buffer);
-    strcat( dataStr, ", ");
-
-    dtostrf(pressure, 5, 1, buffer);
-    strcat( dataStr, buffer);
-    strcat( dataStr, ", ");
-
-    dtostrf(temp, 5, 1, buffer);
-    strcat( dataStr, buffer);
-    strcat( dataStr, ", ");
-
-    dtostrf(altitude, 5, 1, buffer);
-    strcat( dataStr, buffer);
-    strcat( dataStr, ", ");
-    
-    dtostrf(solar_voltage, 5, 1, buffer);
-    strcat( dataStr, buffer);
-    strcat( dataStr, ", ");
-    
-    file.print(servo_angle); file.println();
-    itoa(servo_angle, buffer, 10);
-    strcat( dataStr, buffer);
-    strcat( dataStr, 0); //terminate correctly
-    
-  } else { // file opened unsuccessfully
-    Serial.print("error opening "); Serial.print(filename);
-    Serial.println();
-  }
-
-  // closes and saves file
-  file.close();
+void loop() {
+  // nothing happens after setup
 }

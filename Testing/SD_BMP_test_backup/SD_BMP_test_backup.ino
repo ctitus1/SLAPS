@@ -48,11 +48,7 @@ void setup()
 
 mem_init2();
 
-}// end setup()
-
-////////////////////////////////////////////////////////////
-void loop(void)
-{
+  for (int i = 0; i<2; i++){
   dataStr[0] = 0;
   pressure = bmp.readPressure() / 100; //and conv Pa to hPa
   temperature = bmp.readTemperature();
@@ -97,6 +93,14 @@ void loop(void)
     Serial.println("error opening csv.txt");
   }
   delay(1000);
+  }
+
+}// end setup()
+
+////////////////////////////////////////////////////////////
+void loop(void)
+{
+  
 } //end main
 ///////////////////////////////////////////////
 
@@ -133,7 +137,7 @@ void file_num(int num) {
 void mem_init2() {
   //write csv headers to file:
   String headers = "Time,Pressure,Temperature,Altitude"; // string length cannot be more than 34 characters
-  filename = "DATA000.txt";
+  filename = "csv.txt";
   
   file = SD.open(filename, FILE_WRITE);
   if (file) // it opened OK
@@ -151,7 +155,7 @@ void mem_init2() {
 //
 //  // column headers for CSV
 //  const int num_headers = 6;
-//  String col_headers[num_headers] = {"state,time (ms)","pressure (Pa)","temp (C)",
+//  String col_headers[num_headers] = {"state","time (ms)","pressure (Pa)","temp (C)",
 //                                     "altitude (m)","solar_voltage (V)","servo_angle (deg)"};
 //
 //  // increments ### until its's a unique file
@@ -189,11 +193,9 @@ void mem_write() {
 
     // loads data into appropriate variables
     current_time = millis();
-#if BMP
-    pressure = bmp.readPressure(); // *** BMP NOT WORKING FOR CHRIS
+    pressure = bmp.readPressure();
     temp = bmp.readTemperature();
     altitude = bmp.readAltitude();
-#endif
     solar_voltage = ina.getBusVoltage_V();
     servo_angle = servo.read();
     Serial.println("writing");
