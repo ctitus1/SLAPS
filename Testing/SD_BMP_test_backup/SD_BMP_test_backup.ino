@@ -1,217 +1,223 @@
+// Definitions
+#define HALT_ON_FAILURE 0 // if 1, program will halt on any failure, if 0, it will continue despite errors if it is able to
+#define DETACH_AFTER_MOVING 1 // if 1, servos will detach after moving, if 0, they will not
+#define SD_PIN 4 // pin the SD card is connected to (chip select aka CS pin)
+#define SERVO_PIN 6 // pin the servo is connected to
+#define OPEN_ANGLE 50 // angle for servo to be when open in deg
+#define CLOSE_ANGLE 175 // angle for servo to be at when closed in deg
+#define SERVO_DELAY 1000 // time to wait for servo to move in ms
+#define LOOP_DELAY 100 // time to wait between loops in ms
+#define BMP_ADDRESS 0x77 // address for BMP sensor, can be 0x76 or 0x77, but hardware changes are needed (see documentation)
+#define LOCAL_P_MBAR 1022.67 // change to current sea level barrometric pressure (https://www.wunderground.com)
+#define FILENAME "test.txt" // filename of where data is to be written
+#define OPEN_ALTITUDE 20000 // altitude above which the doors will open
+#define OPEN_TIME 10000 // time after which the door will open in ms regardless of altitude (need to implement regardless of altitude component)
+#define CLOSE_TIME 20000 // time after which the door will close in ms regardless of altitude (need to implement regardless of altitude component)
+#define ERR_LED 8 // pin which serves as output to error LED
+
+// Libraries
 #include <Adafruit_BMP280.h>
 #include <Adafruit_INA219.h>
-//#include <Adafruit_LSM9DS0.h> // IMU library, currently no used in code
 #include <Adafruit_Sensor.h>
-#include <Wire.h>
+//#include <Adafruit_LSM9DS0.h> // IMU library, currently not used in code
 #include <Servo.h>
 #include <SPI.h>
 #include <SD.h>
+
+// Objects
 Adafruit_BMP280 bmp;
 Adafruit_INA219 ina;
-
 File file;
 Servo servo;
-const int SD_pin = 4;
-const int servo_pin = 6;
-const int BMP_address = 0x77;
 
-const String base_filename = "DATA";
-const String ext = ".txt";
-const String default_filename = "DEFAULT.txt";
+// Global Variables
+unsigned long current_time;
+enum {default_state, servo_close, servo_opening, servo_open, servo_closing} state =  default_state;
+enum {no_err, bmp_err, sd_err, mem_init_err, mem_write_err} err = no_err;
+float altitude;
 
-String filename = default_filename; // global variable used by memory functions
-enum {BAD, GOOD} state =  GOOD;
-float QNH = 1022.67; //Change the "1022.67" to your current sea level barrometric pressure (https://www.wunderground.com)
-float pressure;
-float temperature;
-float altimeter;
-char charRead;
-char runMode;
-byte i = 0;
-char dataStr[100] = "";
-char buffer[7];
-////////////////////////////////////////////////////
-void setup()
-{
-  Serial.begin(9600);
-  Serial.println("BMP280/SD Card Demo");
-  bmp.begin(BMP_address);
-  if (SD.begin(SD_pin))
-  {
-    Serial.println("SD card is present & ready");
-  }
-  else
-  {
-    Serial.println("SD card missing or failure");
-    while (1); //halt program
-  }
-
-mem_init2();
-
-  for (int i = 0; i<2; i++){
-  dataStr[0] = 0;
-  pressure = bmp.readPressure() / 100; //and conv Pa to hPa
-  temperature = bmp.readTemperature();
-  altimeter = bmp.readAltitude (QNH); //QNH is local sea lev pressure
-  //----------------------- using c-type ---------------------------
-  //convert floats to string and assemble c-type char string for writing:
-  ltoa( millis(), buffer, 10); //conver long to charStr
-  strcat(dataStr, buffer);//add it onto the end
-  strcat( dataStr, ", "); //append the delimeter
-
-  //dtostrf(floatVal, minimum width, precision, character array);
-  dtostrf(pressure, 5, 1, buffer);  //5 is mininum width, 1 is precision; float value is copied onto buff
-  strcat( dataStr, buffer); //append the coverted float
-  strcat( dataStr, ", "); //append the delimeter
-
-  dtostrf(temperature, 5, 1, buffer);  //5 is mininum width, 1 is precision; float value is copied onto buff
-  strcat( dataStr, buffer); //append the coverted float
-  strcat( dataStr, ", "); //append the delimeter
-
-  dtostrf(altimeter, 5, 1, buffer);  //5 is mininum width, 1 is precision; float value is copied onto buff
-  strcat( dataStr, buffer); //append the coverted float
-  strcat( dataStr, 0); //terminate correctly
-
-  //----- display on local Serial monitor: ------------
-  Serial.print(pressure); Serial.print("hPa  ");
-  Serial.print(temperature);
-  Serial.write(0xC2);  //send degree symbol
-  Serial.write(0xB0);  //send degree symbol
-  Serial.print("C   ");
-  Serial.print(altimeter); Serial.println("m");
-  //---------------------------------------------
-  // open the file. note that only one file can be open at a time,
-  file = SD.open("csv.txt", FILE_WRITE);
-  if (file)
-  {
-    Serial.println("Writing to csv.txt");
-    file.println(dataStr);
-    file.close();
-  }
-  else
-  {
-    Serial.println("error opening csv.txt");
-  }
-  delay(1000);
-  }
-
-}// end setup()
-
-////////////////////////////////////////////////////////////
-void loop(void)
-{
+void setup() {
+  pinMode(ERR_LED,OUTPUT);
+  digitalWrite(ERR_LED,err);
   
-} //end main
-///////////////////////////////////////////////
+  sensor_init(); // initiates all sensors
+  digitalWrite(ERR_LED,err);
+  
+  mem_init(); // creates the data file where data will be stored
+  digitalWrite(ERR_LED,err);
+  mem_write(); // takes an initial data point as soon as memory is set up
+  digitalWrite(ERR_LED,err);
+  
+  close_door(0); // closes door ignoring redundancy checks implemented in close_door()
+  digitalWrite(ERR_LED,err);
+  mem_write();
+  digitalWrite(ERR_LED,err);
+}
 
-void file_num(int num) {
+void loop() {
+  altitude = bmp.readAltitude(LOCAL_P_MBAR);
+  current_time = millis();
+  if (altitude > OPEN_ALTITUDE || (current_time > OPEN_TIME && current_time < CLOSE_TIME)) {
+    open_door(1);
+    digitalWrite(ERR_LED,err);
+  } else {
+    close_door(1);
+    digitalWrite(ERR_LED,err);
+  }
+  mem_write();
+  digitalWrite(ERR_LED,err);
+  delay(LOOP_DELAY);
+}
 
-  // calculates length of global strings
-  int base_filename_length = base_filename.length();
-  int ext_length = ext.length();
-  int filename_length = base_filename_length + 3 + ext_length; // will cause a seg fault if n has more digits than 3
 
-  // allocates space for character buffers (the +1s are for the null character at the end of strings)
-  char base_filename_buf[base_filename_length + 1];
-  char ext_buf[ext_length + 1];
-  char filename_buf[filename_length + 1];
-
-  // check to see if num is too big
-  if (num > 999) {
-    filename = default_filename;
-    Serial.print("ERROR: num > 999, edit filename_length to prevent seg fault from filename_buf being too small");
+void close_door(int use_redunancy_checks) {
+  if (use_redunancy_checks && ( state == servo_close || state == servo_closing )) {
     return;
+  } else {
+    state = servo_closing;
+    servo.attach(SERVO_PIN);
+    servo.write(CLOSE_ANGLE);
+    mem_write(); // takes data point just before delay for closing servo
+    delay(SERVO_DELAY); // should be replaced with a non-blocking wait
+    state = servo_close;
+    #if DETATCH_AFTER_MOVING
+      servo.detach();
+    #endif
   }
-
-  // stores strings base_filename and ext in their respective char[] buffers
-  base_filename.toCharArray(base_filename_buf, base_filename_length + 1);
-  ext.toCharArray(ext_buf, ext_length + 1);
-
-  // stores formatted char[] in filename_buf
-  sprintf(filename_buf, "%s%03i%s", base_filename_buf, num, ext_buf);
-
-  // converts char[] stored in filename_buf to a string and stores it in filename
-  filename = String(filename_buf);
 }
 
-void mem_init2() {
-  //write csv headers to file:
-  String headers = "Time,Pressure,Temperature,Altitude"; // string length cannot be more than 34 characters
-  filename = "csv.txt";
-  
-  file = SD.open(filename, FILE_WRITE);
-  if (file) // it opened OK
-  {
-    Serial.print("Writing headers to ");Serial.println(filename);
-    file.println(headers);
+void open_door(int use_redunancy_checks) {
+  if (use_redunancy_checks && ( state == servo_open || state == servo_opening )) {
+    return;
+  } else {
+    state = servo_opening;
+    servo.attach(SERVO_PIN);
+    servo.write(OPEN_ANGLE);
+    mem_write(); // takes data point just before delay for opening servo
+    delay(SERVO_DELAY); // should be replaced with a non-blocking wait
+    state = servo_open;
+    #if DETATCH_AFTER_MOVING
+      servo.detach();
+    #endif
+  }
+}
+
+void sensor_init() {
+  /////////////////////////////////////
+  // Initialize serial communication //
+  /////////////////////////////////////
+  Serial.begin(9600);
+  /////////////////////////////////////
+
+  ///////////////////////////
+  // Initialize BMP Sensor //
+  ///////////////////////////
+  Serial.print("Initializing BMP sensor at address "); Serial.print(BMP_ADDRESS); Serial.print("... ");
+  if (bmp.begin(BMP_ADDRESS)) {
+    Serial.println("success!");
+  } else {
+    Serial.println("initialization failed.");
+    #if HALT_ON_FAILURE // Might want to condense this into a function or macro, works fine for now
+      Serial.println("Program halted.");
+      while (1);
+    #else
+      Serial.println("Program continuing.");
+      err = bmp_err;
+    #endif
+  }
+  ///////////////////////////
+
+  ////////////////////////
+  // Initialize SD card //
+  ////////////////////////
+  Serial.print("Initializing SD card at pin "); Serial.print(SD_PIN); Serial.print("... ");
+  if (!SD.begin(SD_PIN)) {
+    Serial.println("initialization failed.");
+    #if HALT_ON_FAILURE // Might want to condense this into a function or macro, works fine for now
+      Serial.println("Program halted.");
+      while (1);
+    #else
+      Serial.println("Program continuing.");
+      err = sd_err;
+    #endif
+  }
+  Serial.println("success!");
+  ////////////////////////
+}
+
+void mem_init() {
+  /////////////////////////////////
+  // Initialize file to write to //
+  /////////////////////////////////
+  String header = "time (ms),err,state,pressure (Pa),temp (C),altitude (m),solar_voltage (V),servo_angle (deg)";
+
+  Serial.print("Opening "); Serial.print(FILENAME); Serial.print("... ");
+  file = SD.open(FILENAME, FILE_WRITE);
+
+  if (file) {
+    Serial.print("success!");
+    Serial.println();
+
+    Serial.print("Writing headers to "); Serial.print(FILENAME); Serial.print("... ");
+    file.println(header);
     file.close();
-    Serial.println("Headers written");
-  }
-  else
-    Serial.print("Error opening ");Serial.println(filename);
-}
 
-//void mem_init() {
-//
-//  // column headers for CSV
-//  const int num_headers = 6;
-//  String col_headers[num_headers] = {"state","time (ms)","pressure (Pa)","temp (C)",
-//                                     "altitude (m)","solar_voltage (V)","servo_angle (deg)"};
-//
-//  // increments ### until its's a unique file
-//  int num = 0; // num refers to ### in description, ### is just to show that it's padded by 3 zeroes
-//  do {
-//    file_num(num++);
-//    Serial.println(filename);
-//  } while (SD.exists(filename));
-//
-//  // opens file to write
-//  file = SD.open(filename, FILE_WRITE);
-//  if (file) { // file opened successfully
-//    // write col headers
-//    for(int i = 0; i < num_headers; i++) {
-//    file.print(col_headers[i]);
-//    file.println();
-//    }
-//  } else { // file opened unsuccessfully
-//    Serial.print("error opening "); Serial.print(filename);
-//    Serial.println();
-//  }
-//
-//  // closes and saves file
-//  file.close();
-//}
+    Serial.println("success!");
+  } else {
+    Serial.print("opening "); Serial.print(FILENAME); Serial.println(" in mem_init() failed");
+    #if HALT_ON_FAILURE // Might want to condense this into a function or macro, works fine for now
+      Serial.println("Program halted.");
+      while (1);
+    #else
+      Serial.println("Program continuing.");
+      err = mem_init_err;
+    #endif
+  }
+  /////////////////////////////////
+}
 
 void mem_write() {
+  Serial.print("Opening "); Serial.print(FILENAME); Serial.print("... ");
+  file = SD.open(FILENAME, FILE_WRITE);
+  if (file) {
+    Serial.print("success!");
+    Serial.println();
 
-  // declares data variables
-  unsigned long current_time;
-  float pressure, temp, altitude, solar_voltage;
-  int  servo_angle;
-  file = SD.open(filename, FILE_WRITE);
-  if (file) { // file opened successfully
+    float pressure, temp, solar_voltage;
+    int servo_angle;
 
-    // loads data into appropriate variables
+    Serial.print("Measuring data... ");
     current_time = millis();
     pressure = bmp.readPressure();
     temp = bmp.readTemperature();
-    altitude = bmp.readAltitude();
+    altitude = bmp.readAltitude(LOCAL_P_MBAR);
     solar_voltage = ina.getBusVoltage_V();
     servo_angle = servo.read();
-    Serial.println("writing");
-    // writes data to memory
-    file.print(state); file.print(",");
+    Serial.print("success!");
+    Serial.println();
+
+    Serial.print("Writing to "); Serial.print(FILENAME); Serial.print("... ");
     file.print(current_time); file.print(",");
+    file.print(err); file.print(",");
+    file.print(state); file.print(",");
     file.print(pressure); file.print(",");
     file.print(temp); file.print(",");
     file.print(altitude); file.print(",");
     file.print(solar_voltage); file.print(",");
     file.print(servo_angle); file.println();
-  } else { // file opened unsuccessfully
-    Serial.print("error opening "); Serial.print(filename);
+    file.close();
+    Serial.print("success! File closed.");
     Serial.println();
-  }
 
-  // closes and saves file
-  file.close();
+  } else {
+    Serial.print("opening "); Serial.print(FILENAME); Serial.print(" in mem_write() failed");
+    Serial.println();
+    #if HALT_ON_FAILURE // Might want to condense this into a function or macro, works fine for now
+      Serial.println("Program halted.");
+      while (1);
+    #else
+      Serial.println("Program continuing.");
+      err = mem_write_err;
+    #endif
+  }
 }
