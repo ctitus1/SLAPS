@@ -60,11 +60,14 @@ void setup() {
 
   Serial.print("Initializing SD card...");
   mem_init();
+  mem_write();
+  mem_close();
 
-  Serial.println(myFile);
-  myFile.println("test");
-  myFile.println(pressure);
-  myFile.close();
+//  mem_init();
+//  myFile.println("NEW PRESSURE");
+//  pressure = bmp.readPressure();
+//  myFile.println(pressure);
+//  mem_close();
 }
 
 void loop() {
@@ -78,30 +81,43 @@ void mem_init() {
   }
   Serial.println("initialization done.");
 
-  // open the file. note that only one file can be open at a time,
-  // so you have to close this one before opening another.
-
-
   String headers[7] = {"state", "time (ms)", "pressure (Pa)", "temp (C)", "altitude (m)", "solar_voltage (V)", "servo_angle"};
+  String header = "state,time (ms),pressure (Pa),temp (C),altitude (m),solar_voltage (V),servo_angle";
   int num_headers = sizeof(headers) / sizeof(String);
+  
   myFile = SD.open(FILENAME, FILE_WRITE);
 
-  // if the file opened okay, write to it:
   if (myFile) {
+    // if the file opened okay, write to it:
     Serial.print("Writing headers to "); Serial.print(FILENAME); Serial.println("...");
     for (int i = 0; i < num_headers; i++) {
       myFile.print(headers[i]);
       if (i < num_headers - 1) {
         myFile.print(",");
       }
-      myFile.flush();
     }
     myFile.println();
-    // close the file:
     myFile.flush();
+    
     Serial.println("writing done.");
   } else {
     // if the file didn't open, print an error:
     Serial.println("error opening test.txt");
   }
+}
+
+void mem_write() {
+  myFile.print("test0");myFile.print(",");
+  myFile.print("test1");myFile.print(",");
+  myFile.print(pressure);myFile.print(",");
+  myFile.print("test3");myFile.print(",");
+  pressure = bmp.readPressure();
+  myFile.print(pressure);myFile.print(",");
+  myFile.print("test5");myFile.print(",");
+  myFile.print("test6");myFile.println();
+  myFile.flush();
+}
+
+void mem_close() {
+  myFile.close(); // contains processes for finalizing data
 }
