@@ -9,9 +9,10 @@
 #define DEG_PER_STEP 5 // degrees moved per step of servo
 #define LOOP_DELAY 100 // time to wait between loops in ms
 #define BMP_ADDRESS 0x77 // address for BMP sensor, can be 0x76 or 0x77, but hardware changes are needed (see documentation)
-#define LOCAL_P_MBAR 1022.67 // change to current sea level barrometric pressure (https://www.wunderground.com)
+#define LOCAL_P_MBAR 1010.84 // change to current sea level barrometric pressure (https://www.wunderground.com)
 #define FILENAME "test.csv" // Serialname of where data is to be written
-#define OPEN_ALTITUDE 20000 // altitude above which the doors will open in meters
+#define OPEN_PRESSURE_PA 84307.3 // altitude above which the doors will open in meters
+#define OPEN_PRESSURE_BUFFER 1000
 #define OPEN_TIME 10000 // time after which the door will open in ms regardless of altitude (need to implement regardless of altitude component)
 #define CLOSE_TIME 20000 // time after which the door will close in ms regardless of altitude (need to implement regardless of altitude component)
 #define FULL_HEADERS 0 // 0 for abbreviated headers in data Serial, 1 for full ones
@@ -38,47 +39,94 @@ Servo servo;
 unsigned long current_time;
 enum {default_state, servo_close, servo_opening, servo_open, servo_closing, servo_detached} state =  default_state;
 enum {no_err, bmp_err, sd_err, mem_init_err, mem_write_err, lsm_err} err = no_err;
-float altitude;
+float altitude = 0;
+int angle = CLOSE_ANGLE;
 
 // ******** NEED TO ENSURE STATES ARE WORKING CORRECTLY, THEY ARE NOT RN ******** //
 void setup() {
+  //  Serial.begin(9600);
+  //  Serial.println("Start...");
+  //
+  //  sensor_init(); // initiates all sensors
+  //  mem_init(); // creates the data file where data will be stored
+  //  mem_write(); // takes an initial data point as soon as memory is set up
+  //
+  //  // ensures door is closed
+  //  servo.attach(SERVO_PIN);
+  //  servo.write(CLOSE_ANGLE);
+  //  state = servo_closing;
+  //  mem_write();
+  //  delay(100);
+  //  servo.detach();
+  //  state = servo_close;
+  //
+  //  mem_write(); // takes an initial data point as soon as memory is set up
+  //
+  //  for (int i = 0; i < 3; i++) {
+  //    mem_write();
+  //    delay(100);
+  //  }
+  //
+  //  open_door();
+  //
+  //  for (int i = 0; i < 3; i++) {
+  //    mem_write();
+  //    delay(100);
+  //  }
+  //
+  //  close_door();
+  //
+  //  for (int i = 0; i < 3; i++) {
+  //    mem_write();
+  //    delay(100);
+  //  }
+  //
+  //  Serial.println("Done!");
+
   Serial.begin(9600);
-  Serial.println("Start...");
-
-  sensor_init(); // initiates all sensors
-  mem_init(); // creates the data file where data will be stored
-  mem_write(); // takes an initial data point as soon as memory is set up
-  servo.attach(SERVO_PIN);
-  servo.write(CLOSE_ANGLE);
-  state = servo_closing;
-  mem_write(); // takes an initial data point as soon as memory is set up
-  delay(100);
-  servo.detach();
-  state = servo_close;
-  mem_write(); // takes an initial data point as soon as memory is set up
-  for (int i = 0; i < 3; i++) {
+  Serial.println("sen_init");
+  sensor_init();
+  Serial.println("mem_init");
+  mem_init();
+  Serial.println("init done");
+  Serial.print("alt: "); Serial.println(altitude);
+  mem_write();
+  
+  while(bmp.readPressure() > OPEN_PRESSURE+OPEN_PRESSURE_BUFFER/2) {
+    Serial.println("a");
+    Serial.println(bmp.readPressure());
     mem_write();
     delay(100);
   }
+  
   open_door();
-  for (int i = 0; i < 3; i++) {
-    mem_write();
-    delay(100);
-  }
-  close_door();
-  for (int i = 0; i < 3; i++) {
+  
+  while(bmp.readPressure() < OPEN_PRESSURE-OPEN_PRESSURE_BUFFER/2) {
+    Serial.println("b");
+    Serial.println(bmp.readPressure());
     mem_write();
     delay(100);
   }
 
-  Serial.println("Done!");
+  close_door();
+  
+  while(1) {
+    Serial.println("c");
+    Serial.println(bmp.readPressure());
+    mem_write();
+    delay(100);
+  }
 
 }
 
 // ******** NEED TO ENSURE STATES ARE WORKING CORRECTLY, THEY ARE NOT RN ******** //
 void loop() {
 
-
+//  Serial.println("mem_write");
+//  mem_write();
+//  Serial.print("alt: "); Serial.println(altitude);
+//
+//  delay(100);
 
 }
 
@@ -86,9 +134,10 @@ void close_door() {
 
   servo.attach(SERVO_PIN);
   state = servo_closing;
-  for (int angle = OPEN_ANGLE; angle >= CLOSE_ANGLE; angle -= DEG_PER_STEP) {
+  for (angle; angle >= CLOSE_ANGLE; angle -= DEG_PER_STEP) {
 
     servo.write(angle); // tell servo to go to specified angle
+    Serial.println(angle);
     mem_write(); // takes an initial data point as soon as memory is set up
     delay(DEG_PER_STEP * DELAY_PER_DEG); // waits for the servo to reach the position
 
@@ -106,9 +155,10 @@ void open_door() {
 
   servo.attach(SERVO_PIN);
   state = servo_opening;
-  for (int angle = CLOSE_ANGLE; angle <= OPEN_ANGLE; angle += DEG_PER_STEP) {
+  for (angle; angle <= OPEN_ANGLE; angle += DEG_PER_STEP) {
 
     servo.write(angle); // tell servo to go to specified angle
+    Serial.println(angle);
     mem_write(); // takes an initial data point as soon as memory is set up
     delay(DEG_PER_STEP * DELAY_PER_DEG); // waits for the servo to reach the position
 
@@ -132,6 +182,10 @@ void sensor_init() {
 #if HALT_ON_FAILURE
     while (1);
 #endif
+
+  } else {
+
+    altitude = bmp.readAltitude(LOCAL_P_MBAR); // initialize altitude
 
   }
   ///////////////////////////
@@ -179,15 +233,15 @@ void mem_init() {
 
 #if HEADERS
 #if FULL_HEADERS
-//  file.println("time,err,state,pressure,temp,altitude,sh_voltage,bu_voltage,current,power,servo_angle,A_x,A_y,A_z,G_x,G_y,G_z"); // full headers
+    //  file.println("time,err,state,pressure,temp,altitude,sh_voltage,bu_voltage,current,power,servo_angle,A_x,A_y,A_z,G_x,G_y,G_z"); // full headers
     file.println("time,err,state,pressure,temp,altitude,sh_voltage,bu_voltage,current,power,servo_angle,A_x,A_y,A_z,G_x,G_y,G_z"); // full headers
 #else
-//  file.println("ti,e,st,pr,te,a,Vs,Vb,c,po,Sa,Ax,Ay,Az,Gx,Gy,Gz"); // short headers
+    //  file.println("ti,e,st,pr,te,a,Vs,Vb,c,po,Sa,Ax,Ay,Az,Gx,Gy,Gz"); // short headers
     file.println("ti,e,st,pr,te,a,Vs,Vb,c,po,Sa,Ax,Ay,Az,Gx,Gy,Gz"); // short headers
 #endif
 
 #if UNITS
-//  file.println("ms,,,Pa,C,m,mV,V,mA,mW,deg,g,g,g,dps,dps,dps"); // units
+    //  file.println("ms,,,Pa,C,m,mV,V,mA,mW,deg,g,g,g,dps,dps,dps"); // units
     file.println("ms,,,Pa,C,m,mV,V,mA,mW,deg,g,g,g,dps,dps,dps"); // units
 #endif
 #endif
@@ -212,13 +266,14 @@ void mem_write() {
   if (file) { // writes data to file
 
     lsm.read();
+    altitude = bmp.readAltitude();
 
     file.print(millis()); file.print(",");                        // time
     file.print(err); file.print(",");                             // err
     file.print(state); file.print(",");                           // state
     file.print(bmp.readPressure()); file.print(",");              // pressure
     file.print(bmp.readTemperature()); file.print(",");           // temp
-    file.print(bmp.readAltitude(LOCAL_P_MBAR)); file.print(",");  // altitude
+    file.print(altitude); file.print(",");                        // altitude
     file.print(ina.getShuntVoltage_mV()); file.print(",");        // sh_voltage
     file.print(ina.getBusVoltage_V()); file.print(",");           // bu_voltage
     file.print(ina.getCurrent_mA()); file.print(",");             // current
