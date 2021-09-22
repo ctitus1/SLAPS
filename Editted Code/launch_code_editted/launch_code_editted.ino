@@ -78,20 +78,7 @@ void setup() {
 // ******** NEED TO ENSURE STATES ARE WORKING CORRECTLY, THEY ARE NOT RN ******** //
 void loop() {
 
-  //  altitude = bmp.readAltitude(LOCAL_P_MBAR);
-  //  current_time = millis();
-  //  if (altitude > OPEN_ALTITUDE || (current_time > OPEN_TIME && current_time < CLOSE_TIME)) {
-  //
-  //    open_door();
-  //
-  //  } else {
-  //
-  //    close_door();
-  //
-  //  }
-  //
-  //  mem_write();
-  //  delay(LOOP_DELAY);
+
 
 }
 
