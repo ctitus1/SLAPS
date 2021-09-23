@@ -12,7 +12,7 @@
 #define LOCAL_P_MBAR 1010.84 // change to current sea level barrometric pressure (https://www.wunderground.com)
 #define FILENAME "test.csv" // Serialname of where data is to be written
 #define OPEN_PRESSURE 85000 // pressure below which the doors will open in Pa (~1500m or 5000ft)
-#define OPEN_PRESSURE_BUFFER 10000 // 
+#define OPEN_PRESSURE_BUFFER 1000 // 
 //#define OPEN_TIME 10000 // time after which the door will open in ms regardless of altitude (need to implement regardless of altitude component)
 //#define CLOSE_TIME 20000 // time after which the door will close in ms regardless of altitude (need to implement regardless of altitude component)
 #define FULL_HEADERS 0 // 0 for abbreviated headers in data Serial, 1 for full ones
