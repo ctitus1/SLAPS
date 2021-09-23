@@ -40,9 +40,7 @@ unsigned long current_time;
 enum {default_state, servo_close, servo_opening, servo_open, servo_closing, servo_detached} state =  default_state;
 enum {no_err, bmp_err, sd_err, mem_init_err, mem_write_err, lsm_err} err = no_err;
 float altitude = 0;
-int angle = CLOSE_ANGLE;
 
-// ******** NEED TO ENSURE STATES ARE WORKING CORRECTLY, THEY ARE NOT RN ******** //
 void setup() {
 
   // initializes everything
