@@ -11,8 +11,8 @@
 #define BMP_ADDRESS 0x77 // address for BMP sensor, can be 0x76 or 0x77, but hardware changes are needed (see documentation)
 #define LOCAL_P_MBAR 1010.84 // change to current sea level barrometric pressure (https://www.wunderground.com)
 #define FILENAME "test.csv" // Serialname of where data is to be written
-#define OPEN_PRESSURE 84307.3 // pressure below which the doors will open in Pa (~1500m or 5000ft)
-#define OPEN_PRESSURE_BUFFER 1000 // 
+#define OPEN_PRESSURE 85000 // pressure below which the doors will open in Pa (~1500m or 5000ft)
+#define OPEN_PRESSURE_BUFFER 10000 // 
 //#define OPEN_TIME 10000 // time after which the door will open in ms regardless of altitude (need to implement regardless of altitude component)
 //#define CLOSE_TIME 20000 // time after which the door will close in ms regardless of altitude (need to implement regardless of altitude component)
 #define FULL_HEADERS 0 // 0 for abbreviated headers in data Serial, 1 for full ones
@@ -63,8 +63,8 @@ void setup() {
   state = servo_close;
 
   // while below target altitude+buffer, stay in state a (idk what to name it)
-//  while (millis() < 5000) { // use for bench test
-  while (bmp.readPressure() > (OPEN_PRESSURE - OPEN_PRESSURE_BUFFER / 2)) { // use for actual test
+  while (millis() < 5000) { // use for bench test
+//  while (bmp.readPressure() > (OPEN_PRESSURE - OPEN_PRESSURE_BUFFER / 2)) { // use for actual test
     Serial.println("a");
     Serial.println(bmp.readPressure());
     mem_write();
@@ -75,8 +75,8 @@ void setup() {
   open_door();
 
   // while altitude is above target altitude-buffer, stay in state b
-//  while (millis() < 10000) { // use for bench test
-  while (bmp.readPressure() < (OPEN_PRESSURE + OPEN_PRESSURE_BUFFER / 2)) { // use for actual test
+  while (millis() < 10000) { // use for bench test
+//  while (bmp.readPressure() < (OPEN_PRESSURE + OPEN_PRESSURE_BUFFER / 2)) { // use for actual test
     Serial.println("b");
     Serial.println(bmp.readPressure());
     mem_write();
