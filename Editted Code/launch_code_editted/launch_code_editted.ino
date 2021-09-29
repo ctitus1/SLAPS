@@ -1,7 +1,7 @@
 // Main code
 
 // Definitions
-#define HALT_ON_FAILURE 1 // if 1, program will halt on any failure, if 0, it will continue despite errors if it is able to
+#define HALT_ON_FAILURE 0 // if 1, program will halt on any failure, if 0, it will continue despite errors if it is able to
 #define DETACH_AFTER_MOVING 1 // if 1, servos will detach after moving, if 0, they will not
 #define SD_PIN 4 // pin the SD card is connected to (chip select aka CS pin)
 #define SERVO_PIN 6 // pin the servo is connected to
