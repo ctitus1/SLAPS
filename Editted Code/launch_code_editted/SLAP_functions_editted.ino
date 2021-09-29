@@ -8,7 +8,6 @@ void close_door() {
   for (int angle = servo.read(); angle >= CLOSE_ANGLE; angle -= DEG_PER_STEP) {
 
     servo.write(angle); // tell servo to go to specified angle
-    Serial.println(angle);
     mem_write(); // takes an initial data point as soon as memory is set up
     delay(DEG_PER_STEP * DELAY_PER_DEG); // waits for the servo to reach the position
 
@@ -29,8 +28,7 @@ void open_door() {
   state = servo_opening;
   for (int angle = servo.read(); angle <= OPEN_ANGLE; angle += DEG_PER_STEP) {
 
-    servo.write(angle); // tell servo to go to specified angle
-    Serial.println(angle);
+    servo.write(angle); // tell servo to go to specified angle\
     mem_write(); // takes an initial data point as soon as memory is set up
     delay(DEG_PER_STEP * DELAY_PER_DEG); // waits for the servo to reach the position
 
@@ -62,6 +60,18 @@ void sensor_init() {
 
   }
   ///////////////////////////
+
+  ////////////////////
+  // Initialize INA //
+  ////////////////////
+  if (! ina.begin()) {
+
+    err = ina_err;
+#if HALT_ON_FAILURE
+    while (1);
+#endif
+  }
+  ////////////////////
 
   ////////////////////
   // Initialize LSM //
