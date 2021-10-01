@@ -65,8 +65,8 @@ void setup() {
   state = servo_close;
 
   // while below target altitude+buffer, stay in state a (idk what to name it)
-//  while (millis() < 5000) { // use for bench test
-  while (bmp.readPressure() > (OPEN_PRESSURE - OPEN_PRESSURE_BUFFER / 2)) { // use for actual test
+  while (millis() < 5000) { // use for bench test
+//  while (bmp.readPressure() > (OPEN_PRESSURE - OPEN_PRESSURE_BUFFER / 2)) { // use for actual test
     mem_write();
     delay(100);
   }
@@ -75,8 +75,8 @@ void setup() {
   open_door();
 
   // while altitude is above target altitude-buffer, stay in state b
-//  while (millis() < 10000) { // use for bench test
-  while (bmp.readPressure() < (OPEN_PRESSURE + OPEN_PRESSURE_BUFFER / 2)) { // use for actual test
+  while (millis() < 10000) { // use for bench test
+//  while (bmp.readPressure() < (OPEN_PRESSURE + OPEN_PRESSURE_BUFFER / 2)) { // use for actual test
     mem_write();
     delay(100);
   }
