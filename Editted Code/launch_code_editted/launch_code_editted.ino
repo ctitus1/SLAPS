@@ -11,7 +11,7 @@
 #define DEG_PER_STEP 5 // degrees moved per step of servo
 #define LOOP_DELAY 100 // time to wait between loops in ms
 #define BMP_ADDRESS 0x77 // address for BMP sensor, can be 0x76 or 0x77, but hardware changes are needed (see documentation)
-#define LOCAL_P_MBAR 1010.84 // change to current sea level barrometric pressure (https://www.wunderground.com)
+#define LOCAL_P_MBAR 1023.37 // change to current sea level barrometric pressure (https://www.wunderground.com)
 #define FILENAME "test.csv" // filename of where data is to be written
 #define OPEN_PRESSURE 85000 // pressure below which the doors will open in Pa (~1500m or 5000ft)
 #define OPEN_PRESSURE_BUFFER 1000 // 
@@ -65,8 +65,8 @@ void setup() {
   state = servo_close;
 
   // while below target altitude+buffer, stay in state a (idk what to name it)
-  while (millis() < 5000) { // use for bench test
-//  while (bmp.readPressure() > (OPEN_PRESSURE - OPEN_PRESSURE_BUFFER / 2)) { // use for actual test
+//  while (millis() < 5000) { // use for bench test
+  while (bmp.readPressure() > (OPEN_PRESSURE - OPEN_PRESSURE_BUFFER / 2)) { // use for actual test
     mem_write();
     delay(100);
   }
@@ -75,8 +75,8 @@ void setup() {
   open_door();
 
   // while altitude is above target altitude-buffer, stay in state b
-  while (millis() < 10000) { // use for bench test
-//  while (bmp.readPressure() < (OPEN_PRESSURE + OPEN_PRESSURE_BUFFER / 2)) { // use for actual test
+//  while (millis() < 10000) { // use for bench test
+  while (bmp.readPressure() < (OPEN_PRESSURE + OPEN_PRESSURE_BUFFER / 2)) { // use for actual test
     mem_write();
     delay(100);
   }
